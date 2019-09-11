@@ -1,2 +1,2 @@
 # NonlinearFiltering
-Yau-Yau Method for Solving Nonlinear Filtering Problems
+The Yau-Yau Method for Solving Nonlinear Filtering Problems
