@@ -1,5 +1,5 @@
 clear;clc;close all;
-addpath(genpath('.'));
+addpath('subprograms');
 
 %% Settings
 Dim    = 1;
