@@ -13,21 +13,20 @@ df = @(x) - sin(x);
 h  = @(x)   x.^3;
 
 %% Initialize
-nTau   = T/dTau + 1;
+nTau   = T/dTau;
 Tau    = 0:dTau:T;
-nT     = dTau/dT + 1;
+nT     = dTau/dT;
 
 fprintf('========================================\n');
 fprintf([' ' num2str(Dim) '-D Yau-Yau Method using QIEM with DST\n']);
 fprintf('========================================\n');
-
 
 %% Generate States
 fprintf('Generating States ...');
 tic
 [state, obser, s] = SimulateStateObser(T, dT, f, h, Dim);
 toc
-y = obser(1:(nT-1):end,:);
+y = obser(1:nT:end,:);
 rX = [min(min(state)), max(max(state))];
 fprintf('Range(States) = [%f, %f].\n', rX(1), rX(2));
 
@@ -37,24 +36,28 @@ fprintf('Constructing Matrices ...\n');
 x = (rX(1):dX:rX(2)+dX).';
 [Lambda, B, x, n] = KolmogorovEW(Dim, dT, x, f, df, h);
 
-
 %% Solve Kolmogorov Equations
 sigma0 = exp( -10 * ( sum(x.^2, 2) ) );
-Iu     = zeros((nTau-1)*(nT-1)+1, Dim);
+Iu     = zeros((nTau-1)*nT+1, Dim);
 Idx    = 1;
 U      = sigma0;
 U      = U / sum(U);
 Iu(Idx,:) = sum(U(:,ones(Dim,1)).*x, 1);
-for jj = 1:nTau-1 
+
+for jj = 1:nTau
     Idx = Idx + 1;
 	fprintf('Computing step %d ... ', Idx);tic
-	tmp = y(jj+1,:) - y(jj,:);
+    if jj == 1
+        tmp = y(jj,:);
+    else
+        tmp = y(jj,:) - y(jj-1,:);
+    end
     U = NormalizedExp( sum( h(x).*tmp(ones(size(x,1),1), :) , 2) ) .* U;
 	U = DST_Solver(Dim, Lambda, B, U, n);
     U = U / sum(U);
 	Iu(Idx,:) = sum(U(:,ones(Dim,1)).*x, 1);
     toc
-	for ii = 2:nT-1
+	for ii = 2:nT
         Idx = Idx + 1;
         fprintf('Computing step %d ... ', Idx);tic
         U = DST_Solver(Dim, Lambda, B, U, n);
@@ -91,4 +94,3 @@ fprintf(['Root-Mean-Square Error: ' num2str(Error_RMS) ' \n']);
 fprintf(['Mean Error            : ' num2str(Error_M) ' \n']);
 fprintf(['Time Costs            : ' num2str(telapsed) ' seconds. \n']);
 fprintf('=============================================================\n');
-
